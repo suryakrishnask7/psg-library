@@ -8,18 +8,18 @@ const {
   createIssue,
   returnIssue,
 } = require('../controllers/issueController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Student / Member self-service endpoints (protected)
+// Student & Faculty self-service endpoints (strictly restricted to their own account)
 router.get('/my-loans', protect, getMyLoans);
 router.post('/self-issue', protect, selfIssueBook);
 router.put('/:id/self-return', protect, selfReturnBook);
 
-// General & Librarian issue management
+// Campus-wide Circulation Ledger & Manual Operations (Strictly Librarian Only)
 router.route('/')
-  .get(getIssues)
-  .post(createIssue);
+  .get(protect, authorize('librarian'), getIssues)
+  .post(protect, authorize('librarian'), createIssue);
 
-router.put('/:id/return', returnIssue);
+router.put('/:id/return', protect, authorize('librarian'), returnIssue);
 
 module.exports = router;

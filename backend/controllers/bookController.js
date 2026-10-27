@@ -138,7 +138,7 @@ exports.getBookStats = async (req, res) => {
   }
 };
 
-// Get single book by ID with loan history
+// Get single book by ID with loan history (strictly restricted to librarians)
 exports.getBookById = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -146,9 +146,13 @@ exports.getBookById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Book not found' });
     }
 
-    const issues = await IssueRecord.find({ book: book._id })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    // Confidential borrower records: ONLY librarians can view who holds this book
+    let issues = [];
+    if (req.user && req.user.role === 'librarian') {
+      issues = await IssueRecord.find({ book: book._id })
+        .sort({ createdAt: -1 })
+        .limit(15);
+    }
 
     res.json({
       success: true,

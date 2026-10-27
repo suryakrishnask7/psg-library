@@ -15,6 +15,7 @@ import {
   BookOpen,
   Edit2,
   Trash2,
+  BookmarkCheck,
 } from 'lucide-react';
 import { bookAPI } from '../services/api';
 
@@ -22,20 +23,27 @@ export default function BookDetailsModal({
   isOpen,
   onClose,
   book,
+  user,
+  isBorrowedByMe = false,
   onEdit,
   onDelete,
   onIssue,
+  onSelfBorrow,
   onReturnComplete,
 }) {
+  const isLibrarian = user?.role === 'librarian';
   const [loanHistory, setLoanHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [returningId, setReturningId] = useState(null);
 
   useEffect(() => {
-    if (isOpen && book?._id) {
+    // Only librarians need to load the confidential borrower history
+    if (isOpen && book?._id && isLibrarian) {
       loadBookDetails();
+    } else {
+      setLoanHistory([]);
     }
-  }, [isOpen, book]);
+  }, [isOpen, book, isLibrarian]);
 
   const loadBookDetails = async () => {
     try {
@@ -88,7 +96,7 @@ export default function BookDetailsModal({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors"
+              className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -108,19 +116,19 @@ export default function BookDetailsModal({
             </div>
             <div className="border-x border-gray-200">
               <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider block">
-                Available
+                Available in Shelf
               </span>
               <span className={`text-xl font-bold ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                 {book.availableCopies}
               </span>
-              <span className="text-[11px] text-gray-400 block">in shelf</span>
+              <span className="text-[11px] text-gray-400 block">ready for issue</span>
             </div>
             <div>
               <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider block">
                 Borrowed
               </span>
               <span className="text-xl font-bold text-blue-600">{borrowedCount}</span>
-              <span className="text-[11px] text-gray-400 block">with students</span>
+              <span className="text-[11px] text-gray-400 block">currently issued</span>
             </div>
           </div>
 
@@ -161,19 +169,19 @@ export default function BookDetailsModal({
             </div>
 
             <div className="p-3 rounded-xl bg-gray-50/60 border border-gray-100 col-span-2">
-              <span className="text-gray-400 block mb-1">Stock Status</span>
+              <span className="text-gray-400 block mb-1">Availability Status</span>
               <div className="flex items-center gap-2">
                 {isOutOfStock ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">
-                    <XCircle className="w-3.5 h-3.5" /> Out of Stock
+                    <XCircle className="w-3.5 h-3.5" /> Depleted / Out of Stock
                   </span>
                 ) : isLowStock ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                    <AlertCircle className="w-3.5 h-3.5" /> Low Stock
+                    <AlertCircle className="w-3.5 h-3.5" /> Low Stock ({book.availableCopies} Left)
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> In Stock & Available
+                    <CheckCircle2 className="w-3.5 h-3.5" /> In Stock & Ready to Borrow
                   </span>
                 )}
               </div>
@@ -192,136 +200,168 @@ export default function BookDetailsModal({
             </div>
           )}
 
-          {/* Active Borrowers / Loan History Section */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-blue-600" />
-                Active Borrowers & Recent Loans
-              </h4>
-              <span className="text-xs text-gray-400">{loanHistory.length} records</span>
-            </div>
-
-            {loadingHistory ? (
-              <div className="text-center py-4 text-xs text-gray-400">Loading loan records...</div>
-            ) : loanHistory.length === 0 ? (
-              <div className="text-center py-5 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs text-gray-500">
-                No active or past loans found for this title. Ready for checkout!
+          {/* Active Borrowers & Loans Section: STRICTLY VISIBLE ONLY TO LIBRARIANS */}
+          {isLibrarian && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-blue-600" />
+                  Active Borrowers & Recent Loans (Librarian Access Only)
+                </h4>
+                <span className="text-xs text-gray-400">{loanHistory.length} records</span>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {loanHistory.map((rec) => {
-                  const isIssued = rec.status === 'Issued';
-                  const isOverdue = rec.status === 'Overdue';
-                  const isReturned = rec.status === 'Returned';
 
-                  return (
-                    <div
-                      key={rec._id}
-                      className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/70 flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{rec.studentName}</span>
-                          <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-600">
-                            {rec.rollNumber}
-                          </span>
-                          <span className="text-[11px] text-gray-500">{rec.department}</span>
+              {loadingHistory ? (
+                <div className="text-center py-4 text-xs text-gray-400">Loading loan records...</div>
+              ) : loanHistory.length === 0 ? (
+                <div className="text-center py-5 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs text-gray-500">
+                  No active or past loans found for this title. Ready for checkout!
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {loanHistory.map((rec) => {
+                    const isIssued = rec.status === 'Issued';
+                    const isOverdue = rec.status === 'Overdue';
+                    const isReturned = rec.status === 'Returned';
+
+                    return (
+                      <div
+                        key={rec._id}
+                        className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/70 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">{rec.studentName}</span>
+                            <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-600">
+                              {rec.rollNumber}
+                            </span>
+                            <span className="text-[11px] text-gray-500">{rec.department}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">
+                            <span>Issued: {new Date(rec.issueDate).toLocaleDateString()}</span>
+                            <span>•</span>
+                            <span className={isOverdue ? 'text-rose-600 font-semibold' : ''}>
+                              Due: {new Date(rec.dueDate).toLocaleDateString()}
+                            </span>
+                            {rec.returnDate && (
+                              <>
+                                <span>•</span>
+                                <span className="text-emerald-700">
+                                  Returned: {new Date(rec.returnDate).toLocaleDateString()}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">
-                          <span>Issued: {new Date(rec.issueDate).toLocaleDateString()}</span>
-                          <span>•</span>
-                          <span className={isOverdue ? 'text-rose-600 font-semibold' : ''}>
-                            Due: {new Date(rec.dueDate).toLocaleDateString()}
-                          </span>
-                          {rec.returnDate && (
-                            <>
-                              <span>•</span>
-                              <span className="text-emerald-700">
-                                Returned: {new Date(rec.returnDate).toLocaleDateString()}
-                              </span>
-                            </>
+
+                        {/* Status & Return Action strictly for librarian */}
+                        <div className="flex items-center gap-2">
+                          {isReturned ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Returned
+                            </span>
+                          ) : isOverdue ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              Overdue
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              Issued
+                            </span>
+                          )}
+
+                          {!isReturned && (
+                            <button
+                              onClick={() => handleReturnItem(rec._id)}
+                              disabled={returningId === rec._id}
+                              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>{returningId === rec._id ? 'Returning...' : 'Return'}</span>
+                            </button>
                           )}
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
-                      {/* Status & Return Action */}
-                      <div className="flex items-center gap-2">
-                        {isReturned ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Returned
-                          </span>
-                        ) : isOverdue ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                            Overdue
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            Issued
-                          </span>
-                        )}
+          {/* Action Bar at Bottom */}
+          <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+            {isLibrarian ? (
+              /* Librarian Controls: Edit & Delete strictly here */
+              <>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onEdit(book);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Edit Record</span>
+                  </button>
 
-                        {!isReturned && (
-                          <button
-                            onClick={() => handleReturnItem(rec._id)}
-                            disabled={returningId === rec._id}
-                            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors disabled:opacity-50"
-                          >
-                            <RotateCcw className="w-3 h-3" />
-                            <span>{returningId === rec._id ? 'Returning...' : 'Return'}</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onDelete(book);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => {
+                    onClose();
+                    onIssue(book);
+                  }}
+                  disabled={isOutOfStock}
+                  className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>Issue Copy</span>
+                </button>
+              </>
+            ) : (
+              /* Student / Faculty Controls: ONLY borrow or status, NO edit/delete */
+              <div className="w-full flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  {book.availableCopies > 0 ? `${book.availableCopies} copies currently ready in library stacks` : 'All copies are currently borrowed'}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {isBorrowedByMe ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200">
+                      <BookmarkCheck className="w-4 h-4" />
+                      <span>In Your Bookshelf</span>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onSelfBorrow(book);
+                      }}
+                      disabled={isOutOfStock}
+                      className="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span>{isOutOfStock ? 'Out of Stock' : 'Borrow Book (Self-Issue)'}</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
-          </div>
-
-          {/* Action Bar at Bottom of Details */}
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  onClose();
-                  onEdit(book);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Edit Record</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  onClose();
-                  onDelete(book);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  onClose();
-                  onIssue(book);
-                }}
-                disabled={isOutOfStock}
-                className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ArrowUpRight className="w-4 h-4" />
-                <span>Issue Copy</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

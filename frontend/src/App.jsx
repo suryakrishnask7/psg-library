@@ -514,7 +514,7 @@ export default function App() {
         </>
       )}
 
-      {/* View Book Details Modal (Available to both) */}
+      {/* View Book Details Modal (Role-Guarded) */}
       <BookDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => {
@@ -522,22 +522,27 @@ export default function App() {
           setSelectedBook(null);
         }}
         book={selectedBook}
+        user={user}
+        isBorrowedByMe={selectedBook ? myBorrowedBookIds.has(selectedBook._id) : false}
         onEdit={(b) => {
-          setEditingBook(b);
-          setIsBookModalOpen(true);
+          if (isLibrarian) {
+            setEditingBook(b);
+            setIsBookModalOpen(true);
+          }
         }}
         onDelete={(b) => {
-          setDeletingBook(b);
-          setIsDeleteModalOpen(true);
+          if (isLibrarian) {
+            setDeletingBook(b);
+            setIsDeleteModalOpen(true);
+          }
         }}
         onIssue={(b) => {
           if (isLibrarian) {
             setIssuingBook(b);
             setIsIssueModalOpen(true);
-          } else {
-            handleSelfBorrow(b);
           }
         }}
+        onSelfBorrow={handleSelfBorrow}
         onReturnComplete={() => {
           fetchBooks();
           loadStats();
