@@ -17,7 +17,7 @@ const DEPARTMENTS = [
 const STATUS_FILTERS = [
   { label: 'All Stock', value: 'All' },
   { label: 'Available', value: 'Available', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { label: 'Low Stock (≤2)', value: 'Low Stock', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Low Stock', value: 'Low Stock', color: 'bg-amber-50 text-amber-700 border-amber-200' },
   { label: 'Out of Stock', value: 'Out of Stock', color: 'bg-rose-50 text-rose-700 border-rose-200' },
 ];
 
@@ -47,7 +47,7 @@ export default function SearchBar({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by book title, author, ISBN, shelf location (e.g. Bay CS-01), or publisher..."
+            placeholder="Search by book title, author, ISBN, shelf location, or publisher..."
             className="w-full pl-11 pr-10 py-2.5 bg-gray-50/70 hover:bg-gray-100/70 focus:bg-white text-sm text-gray-900 placeholder-gray-400 rounded-full border border-gray-200/90 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
           />
           {search && (

@@ -176,13 +176,13 @@ export default function ConfirmReturnModal({
           {/* Remarks (Optional) */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-700 uppercase mb-1">
-              Return Remarks (Optional)
+              Return Remarks
             </label>
             <input
               type="text"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder={isOverdue ? 'e.g. Fine collected at counter' : 'e.g. Book checked in good condition'}
+              placeholder="Remarks"
               className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -207,7 +207,7 @@ export default function ConfirmReturnModal({
               }`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Processing Check-in...' : isOverdue ? `Confirm Return (Fine: ₹${totalFine})` : 'Confirm Return & Check-in'}</span>
+              <span>{isSubmitting ? 'Processing Check-in...' : 'Confirm Return'}</span>
             </button>
           </div>
         </div>
@@ -215,3 +215,4 @@ export default function ConfirmReturnModal({
     </div>
   );
 }
+

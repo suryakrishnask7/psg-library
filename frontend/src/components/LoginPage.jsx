@@ -187,7 +187,7 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={portal === 'student' ? 'e.g. 23MX105 or FAC-CSE-42' : 'e.g. LIB-PSG-01'}
+                  placeholder={portal === 'student' ? 'Roll Number, Staff ID, or Email' : 'Librarian ID or Email'}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 font-medium"
                 />
               </div>
@@ -225,7 +225,7 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
                   type="text"
                   value={regData.name}
                   onChange={(e) => setRegData({ ...regData, name: e.target.value })}
-                  placeholder="e.g. Aravind Swaminathan"
+                  placeholder="Full Name"
                   className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -239,7 +239,7 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
                     type="text"
                     value={regData.identifier}
                     onChange={(e) => setRegData({ ...regData, identifier: e.target.value.toUpperCase() })}
-                    placeholder="24CS101"
+                    placeholder="Roll Number or Staff ID"
                     className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-mono text-gray-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -285,7 +285,7 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
                     type="email"
                     value={regData.email}
                     onChange={(e) => setRegData({ ...regData, email: e.target.value })}
-                    placeholder="student@psgtech.ac.in"
+                    placeholder="Email address"
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -298,7 +298,7 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
                     type="password"
                     value={regData.password}
                     onChange={(e) => setRegData({ ...regData, password: e.target.value })}
-                    placeholder="Min 4 characters"
+                    placeholder="Password"
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>

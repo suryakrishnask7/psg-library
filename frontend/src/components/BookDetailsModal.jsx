@@ -177,7 +177,7 @@ export default function BookDetailsModal({
                   </span>
                 ) : isLowStock ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                    <AlertCircle className="w-3.5 h-3.5" /> Low Stock ({book.availableCopies} Left)
+                    <AlertCircle className="w-3.5 h-3.5" /> Low Stock
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -206,7 +206,7 @@ export default function BookDetailsModal({
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-blue-600" />
-                  Active Borrowers & Recent Loans (Librarian Access Only)
+                  Active Borrowers & Recent Loans
                 </h4>
                 <span className="text-xs text-gray-400">{loanHistory.length} records</span>
               </div>
@@ -353,7 +353,7 @@ export default function BookDetailsModal({
                       className="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <ArrowUpRight className="w-4 h-4" />
-                      <span>{isOutOfStock ? 'Out of Stock' : 'Borrow Book (Self-Issue)'}</span>
+                      <span>{isOutOfStock ? 'Out of Stock' : 'Borrow Book'}</span>
                     </button>
                   )}
                 </div>

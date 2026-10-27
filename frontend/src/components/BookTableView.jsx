@@ -116,7 +116,7 @@ export default function BookTableView({
                     ) : isLowStock ? (
                       <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                         <AlertCircle className="w-3 h-3" />
-                        Low ({book.availableCopies})
+                        Low Stock
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">

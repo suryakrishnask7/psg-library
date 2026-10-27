@@ -103,7 +103,7 @@ export default function IssueModal({
               type="text"
               value={formData.studentName}
               onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-              placeholder="e.g. Priyadharshini M"
+              placeholder="Name"
               className={`w-full px-4 py-2.5 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2 ${
                 errors.studentName
                   ? 'border-red-400 focus:ring-red-100'
@@ -124,7 +124,7 @@ export default function IssueModal({
                 type="text"
                 value={formData.rollNumber}
                 onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value.toUpperCase() })}
-                placeholder="23MX105"
+                placeholder="Roll number or ID"
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm font-mono text-gray-900 focus:outline-none focus:ring-2 ${
                   errors.rollNumber
                     ? 'border-red-400 focus:ring-red-100'
@@ -143,7 +143,7 @@ export default function IssueModal({
                 type="text"
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                placeholder="Computer Science"
+                placeholder="Department"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -172,7 +172,7 @@ export default function IssueModal({
                 type="email"
                 value={formData.contactEmail}
                 onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                placeholder="student@psgtech.ac.in"
+                placeholder="Email address"
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -181,13 +181,13 @@ export default function IssueModal({
           {/* Remarks */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Librarian Remarks (Optional)
+              Librarian Remarks
             </label>
             <input
               type="text"
               value={formData.remarks}
               onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-              placeholder="e.g. Reference copy only for project work"
+              placeholder="Remarks"
               className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
             />
           </div>

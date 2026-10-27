@@ -42,7 +42,7 @@ export default function BookCard({
       }
     : isLowStock
     ? {
-        label: `Low Stock (${book.availableCopies})`,
+        label: 'Low Stock',
         bg: 'bg-amber-50 text-amber-700 border-amber-200',
         icon: AlertCircle,
       }
@@ -190,7 +190,7 @@ export default function BookCard({
                   className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs hover:shadow transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>{isOutOfStock ? 'Out of Stock' : 'Borrow Book (Self-Issue)'}</span>
+                  <span>{isOutOfStock ? 'Out of Stock' : 'Borrow Book'}</span>
                 </button>
               )}
 

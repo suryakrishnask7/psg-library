@@ -288,7 +288,7 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
                         className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                       >
                         <RotateCcw className={`w-3.5 h-3.5 ${returningId === loan._id ? 'animate-spin' : ''}`} />
-                        <span>Return Book to Library (Self-Checkin)</span>
+                        <span>Return Book</span>
                       </button>
                     </div>
                   </div>
@@ -335,7 +335,7 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
                         {h.fineAmount > 0 ? (
                           <span className="font-semibold text-rose-600">₹{h.fineAmount} Fine Paid</span>
                         ) : (
-                          <span className="text-gray-400">₹0 (On Time)</span>
+                          <span className="text-gray-400">₹0</span>
                         )}
                       </td>
                       <td className="py-3 px-4">

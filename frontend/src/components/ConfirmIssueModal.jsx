@@ -126,7 +126,7 @@ export default function ConfirmIssueModal({
             <div>
               <span className="text-blue-600 font-medium block flex items-center gap-1 mb-0.5">
                 <Calendar className="w-3.5 h-3.5" />
-                Issue Date (Today)
+                Issue Date
               </span>
               <span className="font-semibold text-gray-900">{formattedIssueDate}</span>
             </div>
@@ -177,3 +177,4 @@ export default function ConfirmIssueModal({
     </div>
   );
 }
+

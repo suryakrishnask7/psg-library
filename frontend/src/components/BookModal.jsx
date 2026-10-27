@@ -174,7 +174,7 @@ export default function BookModal({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g. Introduction to Algorithms (CLRS)"
+              placeholder="Book title"
               className={`w-full px-4 py-2.5 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2 ${
                 errors.title
                   ? 'border-red-400 focus:ring-red-200'
@@ -194,7 +194,7 @@ export default function BookModal({
                 type="text"
                 value={formData.author}
                 onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                placeholder="e.g. Thomas H. Cormen, Ronald Rivest"
+                placeholder="Author name"
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2 ${
                   errors.author
                     ? 'border-red-400 focus:ring-red-200'
@@ -212,7 +212,7 @@ export default function BookModal({
                 type="text"
                 value={formData.isbn}
                 onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
-                placeholder="e.g. 978-0262033848"
+                placeholder="ISBN number"
                 className={`w-full px-4 py-2.5 rounded-xl border font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 ${
                   errors.isbn
                     ? 'border-red-400 focus:ring-red-200'
@@ -250,7 +250,7 @@ export default function BookModal({
                 type="text"
                 value={formData.shelfLocation}
                 onChange={(e) => setFormData({ ...formData, shelfLocation: e.target.value })}
-                placeholder="e.g. Floor 2, Bay CS-01"
+                placeholder="Shelf location"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
               />
             </div>
@@ -309,7 +309,7 @@ export default function BookModal({
                 type="text"
                 value={formData.edition}
                 onChange={(e) => setFormData({ ...formData, edition: e.target.value })}
-                placeholder="4th Edition"
+                placeholder="Edition"
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -328,7 +328,7 @@ export default function BookModal({
                 type="text"
                 value={formData.publisher}
                 onChange={(e) => setFormData({ ...formData, publisher: e.target.value })}
-                placeholder="MIT Press"
+                placeholder="Publisher"
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -343,7 +343,7 @@ export default function BookModal({
               rows={2}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Brief summary of book contents or syllabus units..."
+              placeholder="Brief summary of book contents..."
               className="w-full px-4 py-2 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500"
             />
           </div>
