@@ -399,3 +399,4 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
     </div>
   );
 }
+

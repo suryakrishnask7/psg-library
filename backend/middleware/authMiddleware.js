@@ -55,3 +55,4 @@ exports.authorize = (...roles) => {
 };
 
 exports.JWT_SECRET = JWT_SECRET;
+
