@@ -13,12 +13,17 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { bookAPI } from '../services/api';
+import ConfirmReturnModal from './ConfirmReturnModal';
 
 export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onToast }) {
   const [loans, setLoans] = useState({ active: [], history: [], activeCount: 0 });
   const [loading, setLoading] = useState(true);
   const [returningId, setReturningId] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState('active'); // 'active' | 'history'
+
+  // Return Confirmation Modal state
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [selectedLoanToReturn, setSelectedLoanToReturn] = useState(null);
 
   const fetchMyLoans = async () => {
     try {
@@ -41,12 +46,29 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
     }
   }, [user]);
 
-  const handleSelfReturn = async (issueId, bookTitle) => {
+  const handleOpenReturnModal = (loan) => {
+    setSelectedLoanToReturn({
+      issueId: loan._id,
+      bookTitle: loan.bookTitle,
+      bookAuthor: loan.book?.author,
+      studentName: loan.studentName || user?.name,
+      rollNumber: loan.rollNumber || user?.identifier,
+      department: loan.department || user?.department,
+      issueDate: loan.issueDate,
+      dueDate: loan.dueDate,
+    });
+    setIsReturnModalOpen(true);
+  };
+
+  const handleConfirmReturn = async ({ fineAmount, remarks }) => {
+    if (!selectedLoanToReturn) return;
     try {
-      setReturningId(issueId);
-      const res = await bookAPI.selfReturnBook(issueId);
+      setReturningId(selectedLoanToReturn.issueId);
+      const res = await bookAPI.selfReturnBook(selectedLoanToReturn.issueId);
       if (res.data.success) {
-        if (onToast) onToast(`"${bookTitle}" returned to PSG Library shelf!`, 'success');
+        setIsReturnModalOpen(false);
+        setSelectedLoanToReturn(null);
+        if (onToast) onToast(res.data.message || `"${selectedLoanToReturn.bookTitle}" returned!`, 'success');
         await fetchMyLoans();
         if (onReturnComplete) onReturnComplete();
       }
@@ -258,15 +280,15 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
                       </div>
                     </div>
 
-                    {/* Self-Return Button */}
+                    {/* Self-Return Button - Triggers Confirmation Modal with Automated Fine Calculation */}
                     <div className="pt-2">
                       <button
-                        onClick={() => handleSelfReturn(loan._id, loan.bookTitle)}
+                        onClick={() => handleOpenReturnModal(loan)}
                         disabled={returningId === loan._id}
                         className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                       >
                         <RotateCcw className={`w-3.5 h-3.5 ${returningId === loan._id ? 'animate-spin' : ''}`} />
-                        <span>{returningId === loan._id ? 'Processing Return...' : 'Return Book to Library (Self-Checkin)'}</span>
+                        <span>Return Book to Library (Self-Checkin)</span>
                       </button>
                     </div>
                   </div>
@@ -292,6 +314,7 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
                     <th className="py-3 px-4">Book Title & ISBN</th>
                     <th className="py-3 px-4">Borrowed On</th>
                     <th className="py-3 px-4">Returned On</th>
+                    <th className="py-3 px-4">Fine Status</th>
                     <th className="py-3 px-4">Status</th>
                   </tr>
                 </thead>
@@ -309,6 +332,13 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
                         {h.returnDate ? new Date(h.returnDate).toLocaleDateString() : '—'}
                       </td>
                       <td className="py-3 px-4">
+                        {h.fineAmount > 0 ? (
+                          <span className="font-semibold text-rose-600">₹{h.fineAmount} Fine Paid</span>
+                        ) : (
+                          <span className="text-gray-400">₹0 (On Time)</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3" /> Returned
                         </span>
@@ -321,6 +351,18 @@ export default function MyBookshelf({ user, onReturnComplete, onGoToCatalog, onT
           )}
         </div>
       )}
+
+      {/* Confirmation Modal before Returning Book with Automated Fine Calculation */}
+      <ConfirmReturnModal
+        isOpen={isReturnModalOpen}
+        onClose={() => {
+          setIsReturnModalOpen(false);
+          setSelectedLoanToReturn(null);
+        }}
+        onConfirm={handleConfirmReturn}
+        returnDetails={selectedLoanToReturn}
+        isSubmitting={returningId !== null}
+      />
     </div>
   );
 }

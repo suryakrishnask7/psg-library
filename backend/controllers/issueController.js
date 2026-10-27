@@ -217,14 +217,35 @@ exports.selfReturnBook = async (req, res) => {
       await book.save();
     }
 
+    const now = new Date();
     issue.status = 'Returned';
-    issue.returnDate = new Date();
+    issue.returnDate = now;
+
+    // Automated Late Fine Calculation: ₹5/day overdue
+    let fine = 0;
+    let overdueDays = 0;
+    if (now > new Date(issue.dueDate)) {
+      const diffMs = now.getTime() - new Date(issue.dueDate).getTime();
+      overdueDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      fine = overdueDays * 5; // ₹5 per day
+    }
+    issue.fineAmount = req.body.fineAmount !== undefined ? Number(req.body.fineAmount) : fine;
+
+    if (req.body.remarks) {
+      issue.remarks = req.body.remarks;
+    }
     await issue.save();
+
+    const returnMsg = overdueDays > 0
+      ? `"${issue.bookTitle}" returned! Overdue by ${overdueDays} day(s). Late fine: ₹${issue.fineAmount}`
+      : `"${issue.bookTitle}" returned on schedule! Zero late fine.`;
 
     res.json({
       success: true,
-      message: `"${issue.bookTitle}" returned successfully! Thank you.`,
+      message: returnMsg,
       data: issue,
+      fineAmount: issue.fineAmount,
+      overdueDays,
     });
   } catch (error) {
     console.error('selfReturnBook error:', error);
@@ -339,18 +360,36 @@ exports.returnIssue = async (req, res) => {
       await book.save();
     }
 
+    const now = new Date();
     issue.status = 'Returned';
-    issue.returnDate = new Date();
+    issue.returnDate = now;
+
+    // Automated Late Fine Calculation: ₹5/day overdue
+    let fine = 0;
+    let overdueDays = 0;
+    if (now > new Date(issue.dueDate)) {
+      const diffMs = now.getTime() - new Date(issue.dueDate).getTime();
+      overdueDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      fine = overdueDays * 5; // ₹5 per day
+    }
+    issue.fineAmount = req.body.fineAmount !== undefined ? Number(req.body.fineAmount) : fine;
+
     if (req.body.remarks) {
       issue.remarks = req.body.remarks;
     }
     await issue.save();
 
+    const returnMsg = overdueDays > 0
+      ? `"${issue.bookTitle}" returned by ${issue.studentName}! Overdue by ${overdueDays} day(s). Late fine: ₹${issue.fineAmount}`
+      : `"${issue.bookTitle}" returned on schedule by ${issue.studentName}! Zero late fine.`;
+
     res.json({
       success: true,
-      message: `Book "${issue.bookTitle}" marked as returned by ${issue.studentName}`,
+      message: returnMsg,
       data: issue,
       book,
+      fineAmount: issue.fineAmount,
+      overdueDays,
     });
   } catch (error) {
     console.error('returnIssue error:', error);

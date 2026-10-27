@@ -12,6 +12,7 @@ import CirculationDesk from './components/CirculationDesk';
 import AnalyticsView from './components/AnalyticsView';
 import MyBookshelf from './components/MyBookshelf';
 import LoginPage from './components/LoginPage';
+import ConfirmIssueModal from './components/ConfirmIssueModal';
 import Toast from './components/Toast';
 import { bookAPI } from './services/api';
 import { BookOpen, RefreshCw, Cloud, Database, Globe } from 'lucide-react';
@@ -59,6 +60,11 @@ export default function App() {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingBook, setDeletingBook] = useState(null);
+
+  // Issue Confirmation Modal state (Confirmation before checkout)
+  const [isConfirmIssueOpen, setIsConfirmIssueOpen] = useState(false);
+  const [pendingIssueDetails, setPendingIssueDetails] = useState(null);
+  const [pendingIssueBook, setPendingIssueBook] = useState(null);
 
   // Loading flags
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,12 +159,39 @@ export default function App() {
     showToast('Logged out successfully', 'info');
   };
 
-  // Student Self-Service Borrow / Issue
-  const handleSelfBorrow = async (book) => {
+  // Open Confirmation Modal before Issuing a Book
+  const initiateSelfBorrow = (book) => {
+    const loanDays = user?.role === 'faculty' ? 30 : 14;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + loanDays);
+
+    setPendingIssueBook(book);
+    setPendingIssueDetails({
+      bookTitle: book.title,
+      bookAuthor: book.author,
+      isbn: book.isbn,
+      shelfLocation: book.shelfLocation,
+      coverColor: book.coverColor,
+      studentName: user?.name,
+      rollNumber: user?.identifier,
+      department: user?.department,
+      issueDate: new Date(),
+      dueDate,
+    });
+    setIsConfirmIssueOpen(true);
+  };
+
+  // Finalize Book Checkout after user confirmation
+  const handleConfirmSelfBorrow = async () => {
+    if (!pendingIssueBook) return;
     try {
-      const res = await bookAPI.selfIssueBook(book._id);
+      setIsSubmitting(true);
+      const res = await bookAPI.selfIssueBook(pendingIssueBook._id);
       if (res.data.success) {
-        showToast(res.data.message || `"${book.title}" added to your bookshelf!`, 'success');
+        setIsConfirmIssueOpen(false);
+        setPendingIssueBook(null);
+        setPendingIssueDetails(null);
+        showToast(res.data.message || `"${pendingIssueBook.title}" added to your bookshelf!`, 'success');
         fetchBooks();
         loadStats();
         loadMyLoans();
@@ -166,6 +199,8 @@ export default function App() {
     } catch (err) {
       const msg = err.response?.data?.message || 'Could not borrow book';
       showToast(msg, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -387,7 +422,7 @@ export default function App() {
                       setIssuingBook(b);
                       setIsIssueModalOpen(true);
                     }}
-                    onSelfBorrow={handleSelfBorrow}
+                    onSelfBorrow={initiateSelfBorrow}
                     onQuickReturn={handleQuickReturn}
                   />
                 ))}
@@ -413,7 +448,7 @@ export default function App() {
                   setIssuingBook(b);
                   setIsIssueModalOpen(true);
                 }}
-                onSelfBorrow={handleSelfBorrow}
+                onSelfBorrow={initiateSelfBorrow}
                 onQuickReturn={handleQuickReturn}
               />
             )}
@@ -542,13 +577,26 @@ export default function App() {
             setIsIssueModalOpen(true);
           }
         }}
-        onSelfBorrow={handleSelfBorrow}
+        onSelfBorrow={initiateSelfBorrow}
         onReturnComplete={() => {
           fetchBooks();
           loadStats();
           loadMyLoans();
           showToast('Book copy successfully checked back into stock!', 'success');
         }}
+      />
+
+      {/* Confirmation Modal before Issuing a Book */}
+      <ConfirmIssueModal
+        isOpen={isConfirmIssueOpen}
+        onClose={() => {
+          setIsConfirmIssueOpen(false);
+          setPendingIssueBook(null);
+          setPendingIssueDetails(null);
+        }}
+        onConfirm={handleConfirmSelfBorrow}
+        issueDetails={pendingIssueDetails}
+        isSubmitting={isSubmitting}
       />
 
       {/* Toast Notification */}

@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { bookAPI } from '../services/api';
+import ConfirmReturnModal from './ConfirmReturnModal';
 
 export default function CirculationDesk({ onLoanReturned, onToast }) {
   const [issues, setIssues] = useState([]);
@@ -19,6 +20,10 @@ export default function CirculationDesk({ onLoanReturned, onToast }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [returningId, setReturningId] = useState(null);
+
+  // Return Confirmation Modal state
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [selectedLoanToReturn, setSelectedLoanToReturn] = useState(null);
 
   const fetchIssues = async () => {
     try {
@@ -48,12 +53,29 @@ export default function CirculationDesk({ onLoanReturned, onToast }) {
     fetchIssues();
   };
 
-  const handleReturn = async (issueId, bookTitle, studentName) => {
+  const handleOpenReturnModal = (record) => {
+    setSelectedLoanToReturn({
+      issueId: record._id,
+      bookTitle: record.bookTitle,
+      bookAuthor: record.book?.author,
+      studentName: record.studentName,
+      rollNumber: record.rollNumber,
+      department: record.department,
+      issueDate: record.issueDate,
+      dueDate: record.dueDate,
+    });
+    setIsReturnModalOpen(true);
+  };
+
+  const handleConfirmReturn = async ({ fineAmount, remarks }) => {
+    if (!selectedLoanToReturn) return;
     try {
-      setReturningId(issueId);
-      const res = await bookAPI.returnIssue(issueId);
+      setReturningId(selectedLoanToReturn.issueId);
+      const res = await bookAPI.returnIssue(selectedLoanToReturn.issueId, remarks);
       if (res.data.success) {
-        if (onToast) onToast(`"${bookTitle}" returned by ${studentName}`, 'success');
+        setIsReturnModalOpen(false);
+        setSelectedLoanToReturn(null);
+        if (onToast) onToast(res.data.message || `"${selectedLoanToReturn.bookTitle}" returned!`, 'success');
         await fetchIssues();
         if (onLoanReturned) onLoanReturned();
       }
@@ -243,12 +265,12 @@ export default function CirculationDesk({ onLoanReturned, onToast }) {
                       <td className="py-3.5 px-4 whitespace-nowrap text-right">
                         {!isReturned ? (
                           <button
-                            onClick={() => handleReturn(rec._id, rec.bookTitle, rec.studentName)}
+                            onClick={() => handleOpenReturnModal(rec)}
                             disabled={returningId === rec._id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
-                            <span>{returningId === rec._id ? 'Processing...' : 'Mark Return'}</span>
+                            <span>Mark Return</span>
                           </button>
                         ) : (
                           <span className="text-xs text-gray-400 italic">Completed</span>
@@ -262,6 +284,18 @@ export default function CirculationDesk({ onLoanReturned, onToast }) {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal before Return with Automated Fine Calculation */}
+      <ConfirmReturnModal
+        isOpen={isReturnModalOpen}
+        onClose={() => {
+          setIsReturnModalOpen(false);
+          setSelectedLoanToReturn(null);
+        }}
+        onConfirm={handleConfirmReturn}
+        returnDetails={selectedLoanToReturn}
+        isSubmitting={returningId !== null}
+      />
     </div>
   );
 }
