@@ -272,21 +272,6 @@ export default function App() {
     }
   };
 
-  // Quick Return directly from book card or table (Librarian)
-  const handleQuickReturn = async (book) => {
-    try {
-      const res = await bookAPI.returnBookByBookId(book._id);
-      if (res.data.success) {
-        showToast(res.data.message || '1 copy returned to shelf', 'success');
-        fetchBooks();
-        loadStats();
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || 'No active loans to return for this book';
-      showToast(msg, 'error');
-    }
-  };
-
   // Seed / Reset Database Demo Action (Librarian)
   const handleSeedDatabase = async () => {
     try {
@@ -423,7 +408,6 @@ export default function App() {
                       setIsIssueModalOpen(true);
                     }}
                     onSelfBorrow={initiateSelfBorrow}
-                    onQuickReturn={handleQuickReturn}
                   />
                 ))}
               </div>
@@ -449,7 +433,6 @@ export default function App() {
                   setIsIssueModalOpen(true);
                 }}
                 onSelfBorrow={initiateSelfBorrow}
-                onQuickReturn={handleQuickReturn}
               />
             )}
           </div>

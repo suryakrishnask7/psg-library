@@ -6,7 +6,6 @@ import {
   Trash2,
   BookOpen,
   ArrowUpRight,
-  RotateCcw,
   CheckCircle2,
   AlertCircle,
   XCircle,
@@ -22,7 +21,6 @@ export default function BookTableView({
   onDelete,
   onIssue,
   onSelfBorrow,
-  onQuickReturn,
 }) {
   if (!books || books.length === 0) return null;
 
@@ -138,16 +136,6 @@ export default function BookTableView({
                         >
                           Issue
                         </button>
-
-                        {borrowed > 0 && (
-                          <button
-                            onClick={() => onQuickReturn(book)}
-                            title="Quick return copy"
-                            className="p-1 text-gray-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                        )}
 
                         <button
                           onClick={() => onView(book)}

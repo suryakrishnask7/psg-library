@@ -7,7 +7,6 @@ import {
   Trash2,
   BookOpen,
   ArrowUpRight,
-  RotateCcw,
   CheckCircle2,
   AlertCircle,
   XCircle,
@@ -23,12 +22,10 @@ export default function BookCard({
   onDelete,
   onIssue,
   onSelfBorrow,
-  onQuickReturn,
 }) {
   const isLibrarian = user?.role === 'librarian';
   const isOutOfStock = book.availableCopies <= 0;
   const isLowStock = book.availableCopies > 0 && book.availableCopies <= 2;
-  const borrowedCount = book.totalCopies - book.availableCopies;
   const percentage = book.totalCopies > 0
     ? Math.round((book.availableCopies / book.totalCopies) * 100)
     : 0;
@@ -140,16 +137,6 @@ export default function BookCard({
                 <ArrowUpRight className="w-3.5 h-3.5" />
                 <span>Issue</span>
               </button>
-
-              {borrowedCount > 0 && (
-                <button
-                  onClick={() => onQuickReturn(book)}
-                  title="Quick return an issued copy"
-                  className="flex items-center justify-center py-1.5 px-2.5 rounded-xl text-xs font-medium bg-gray-100 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 hover:border-emerald-200 border border-transparent transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              )}
 
               <button
                 onClick={() => onView(book)}
