@@ -20,8 +20,15 @@ const PORT = process.env.PORT || 5000;
 connectDB().then(async () => {
   try {
     await seedDefaultUsers();
+    // Auto-seed books if database is completely empty
+    const Book = require('./models/Book');
+    const bookCount = await Book.countDocuments();
+    if (bookCount === 0) {
+      console.log('⚡ Empty database detected. Auto-seeding 50 PSG books & circulation records...');
+      await seedDB();
+    }
   } catch (err) {
-    console.error('Default users initialization error:', err.message);
+    console.error('Default initialization error:', err.message);
   }
 });
 
