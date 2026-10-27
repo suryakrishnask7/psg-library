@@ -100,14 +100,6 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
     }
   };
 
-  // Quick Demo account auto-fillers
-  const fillDemoAccount = (demoId, demoPass, targetPortal) => {
-    setPortal(targetPortal);
-    setIsRegister(false);
-    setIdentifier(demoId);
-    setPassword(demoPass);
-  };
-
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col justify-center items-center px-4 py-12">
       {/* Brand Header */}
@@ -347,52 +339,11 @@ export default function LoginPage({ onLoginSuccess, onToast }) {
                   Register an account
                 </button>
               </p>
-            ) : null}
-          </div>
-
-          {/* Quick Demo Fillers for Instant Pair Programming / Review */}
-          <div className="mt-6 pt-5 border-t border-gray-100 space-y-2">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              One-Click Instant Demo Logins:
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('23MX105', 'student123', 'student')}
-                className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 text-left border border-blue-100 transition-colors"
-              >
-                <span className="font-bold block truncate">👨‍🎓 Aravind (Student)</span>
-                <span className="text-[10px] text-blue-600 font-mono">23MX105 • MCA</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('24CS101', 'student123', 'student')}
-                className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-left border border-indigo-100 transition-colors"
-              >
-                <span className="font-bold block truncate">👩‍🎓 Kavitha (Student)</span>
-                <span className="text-[10px] text-indigo-600 font-mono">24CS101 • CSE</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('FAC-CSE-42', 'faculty123', 'student')}
-                className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-left border border-purple-100 transition-colors"
-              >
-                <span className="font-bold block truncate">👨‍🏫 Dr. Radhakrishnan</span>
-                <span className="text-[10px] text-purple-600 font-mono">FAC-CSE-42 • CSE</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('LIB-PSG-01', 'admin123', 'librarian')}
-                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-left border border-amber-100 transition-colors"
-              >
-                <span className="font-bold block truncate">🗝️ Head Librarian</span>
-                <span className="text-[10px] text-amber-600 font-mono">LIB-PSG-01 • Admin</span>
-              </button>
-            </div>
+            ) : (
+              <p className="text-xs text-gray-400">
+                Authorized PSG College Library Staff Access Only
+              </p>
+            )}
           </div>
         </div>
       </div>

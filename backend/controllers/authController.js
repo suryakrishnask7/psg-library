@@ -181,17 +181,14 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// Helper: seed default users if none exist
+// Helper: seed default users and ensure librarian password is updated
 exports.seedDefaultUsers = async () => {
-  const count = await User.countDocuments();
-  if (count > 0) return;
-
   const defaultUsers = [
     {
       name: 'Dr. K. S. Meenakshi',
       identifier: 'LIB-PSG-01',
       email: 'librarian@psgtech.ac.in',
-      password: 'admin123',
+      password: '1234',
       role: 'librarian',
       department: 'Central Library',
       phone: '+91 94433 11223',
@@ -230,9 +227,20 @@ exports.seedDefaultUsers = async () => {
   ];
 
   for (const u of defaultUsers) {
-    const user = new User(u);
-    await user.save();
+    const existing = await User.findOne({
+      $or: [{ email: u.email }, { identifier: u.identifier }],
+    });
+
+    if (existing) {
+      if (u.role === 'librarian') {
+        existing.password = '1234';
+        await existing.save();
+      }
+    } else {
+      const user = new User(u);
+      await user.save();
+    }
   }
-  console.log('Seeded default PSG Library accounts (Librarian, Students, Faculty).');
+  console.log('Seeded default PSG Library accounts. Librarian: librarian@psgtech.ac.in / 1234');
 };
 

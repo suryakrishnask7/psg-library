@@ -37,7 +37,7 @@ The system is pre-seeded with ready-to-test accounts. You can use the **1-Click 
 
 | Role | Portal | Identifier / Roll No | Password | Notes |
 |---|---|---|---|---|
-| **Head Librarian** | Librarian Portal | `LIB-PSG-01` | `admin123` | Full admin privileges |
+| **Head Librarian** | Librarian Portal | `librarian@psgtech.ac.in` *(or `LIB-PSG-01`)* | `1234` | Full admin privileges |
 | **Student** | Student Portal | `23MX105` | `student123` | Aravind (MCA, 4 books limit) |
 | **Student** | Student Portal | `24CS101` | `student123` | Kavitha (CSE, 4 books limit) |
 | **Faculty** | Student Portal | `FAC-CSE-42` | `faculty123` | Dr. Radhakrishnan (CSE, 6 books limit) |
