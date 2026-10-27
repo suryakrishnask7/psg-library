@@ -1,0 +1,25 @@
+{
+  "name": "psg-library",
+  "version": "1.0.0",
+  "description": "PSG Library Management System - MERN Stack Application",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm run dev",
+    "seed": "cd backend && node seed.js",
+    "build:client": "cd frontend && npm run build",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend"
+  },
+  "keywords": [
+    "library-management",
+    "psg-tech",
+    "mern",
+    "mongodb-atlas",
+    "render",
+    "vercel"
+  ],
+  "author": "PSG College of Technology",
+  "license": "MIT"
+}
