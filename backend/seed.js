@@ -230,7 +230,7 @@ const seedDB = async () => {
         // Randomize issue dates between 2 to 18 days ago
         const daysAgo = (i * 3 + bIdx * 2) % 18 + 2;
         const issueDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-        
+
         // Due date is 14 days after issue
         const dueDate = new Date(issueDate.getTime() + 14 * 24 * 60 * 60 * 1000);
         const isOverdue = dueDate < new Date();
