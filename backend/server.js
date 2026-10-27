@@ -35,17 +35,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Healthcheck & Root Endpoint
+// Favicon handler to prevent 404 in logs
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// Healthcheck & Root Endpoints
 app.get('/', (req, res) => {
+  const liveUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
   res.json({
     message: 'PSG Library Management System API is live and operational 📚',
+    serverUrl: liveUrl,
     version: '1.0.0',
-    documentation: '/api/books, /api/issues, /api/auth, /api/books/stats',
+    documentation: '/api/auth, /api/books, /api/issues, /api/books/stats (also accessible without /api prefix)',
     databaseStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting/Disconnected',
   });
 });
 
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -55,7 +60,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Seed API endpoint (useful for instant database setup in cloud & demo)
-app.post('/api/seed', async (req, res) => {
+app.post(['/api/seed', '/seed'], async (req, res) => {
   try {
     await seedDB();
     await seedDefaultUsers();
@@ -65,10 +70,10 @@ app.post('/api/seed', async (req, res) => {
   }
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/books', bookRoutes);
-app.use('/api/issues', issueRoutes);
+// Mount Routes on BOTH /api/... and root /... so requests never 404
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/books', '/books'], bookRoutes);
+app.use(['/api/issues', '/issues'], issueRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {
@@ -89,10 +94,17 @@ app.use((err, req, res, next) => {
 
 // Start Express Server
 app.listen(PORT, () => {
+  const isRender = Boolean(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
+  const liveUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+
   console.log(`=========================================`);
   console.log(`🚀 PSG Library Backend Server`);
-  console.log(`📡 Running on http://localhost:${PORT}`);
-  console.log(`🌐 Ready for Render Deployment on port: ${PORT}`);
+  if (isRender) {
+    console.log(`📡 Live Cloud URL: ${liveUrl}`);
+    console.log(`🌐 Hosting Platform: Render Production Mode (Port ${PORT})`);
+  } else {
+    console.log(`📡 Local Dev URL: http://localhost:${PORT}`);
+  }
   console.log(`=========================================`);
 
   // Start Render keep-alive background worker
