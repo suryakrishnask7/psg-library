@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Get API base URL from Vite env or fallback to relative /api or localhost:5000/api
 const baseURL = import.meta.env.VITE_API_URL || (
   window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api'
 );
@@ -13,6 +12,21 @@ const api = axios.create({
   timeout: 15000,
 });
 
+// Auto attach JWT token from localStorage to every outgoing request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('psg_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (data) => api.post('/auth/register', data),
+  getMe: () => api.get('/auth/me'),
+};
+
 export const bookAPI = {
   // Books CRUD
   getAll: (params) => api.get('/books', { params }),
@@ -23,7 +37,12 @@ export const bookAPI = {
   getStats: () => api.get('/books/stats'),
   returnBookByBookId: (bookId, rollNumber) => api.post(`/books/${bookId}/return`, { rollNumber }),
 
-  // Circulation / Loans
+  // Student & Faculty Self-Service Circulation
+  getMyLoans: (rollNumber) => api.get('/issues/my-loans', { params: { rollNumber } }),
+  selfIssueBook: (bookId) => api.post('/issues/self-issue', { bookId }),
+  selfReturnBook: (issueId) => api.put(`/issues/${issueId}/self-return`),
+
+  // Librarian Circulation Desk
   getIssues: (params) => api.get('/issues', { params }),
   issueBook: (data) => api.post('/issues', data),
   returnIssue: (id, remarks) => api.put(`/issues/${id}/return`, { remarks }),

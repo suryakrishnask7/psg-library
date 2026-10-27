@@ -117,3 +117,4 @@ export default function StatsOverview({ stats, onSelectDepartment, selectedDepar
     </div>
   );
 }
+

@@ -82,3 +82,4 @@ issueRecordSchema.index({ rollNumber: 1, status: 1 });
 issueRecordSchema.index({ book: 1, status: 1 });
 
 module.exports = mongoose.model('IssueRecord', issueRecordSchema);
+

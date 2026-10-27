@@ -9,7 +9,42 @@ Ready for production deployment across:
 
 ---
 
-## ✨ Key Features
+## 🔐 Portals & Role-Based Access Control
+
+PSG Library provides two distinct, purpose-built portals with Google Material 3 minimalist elegance:
+
+### 1. 🎓 Student & Faculty Portal
+- **Browse & Availability**: Search the catalog by title, author, ISBN, shelf location, or department.
+- **Real-Time Availability**: Check physical copies in stacks before walking to the library.
+- **Self-Checkout / Self-Issue**: Students and faculty can issue books directly to their account with 1-click.
+- **My Bookshelf (Digital Lending Wallet)**:
+  - View currently borrowed books.
+  - Return countdown timer (e.g. *"Due in 9 days"*, *"Due Today"*, or *"Overdue"*).
+  - Self-service **"Return Book"** button to immediately check copies back into library inventory.
+  - Complete borrowing history ledger.
+
+### 2. 🗝️ Librarian Administrative Portal
+- **Catalog Management**: Add, update, and delete physical book records.
+- **Stock Control**: Adjust total physical copies, shelf locations, and categories.
+- **Circulation Desk**: Campus-wide ledger of all student loans, filterable by *Issued*, *Overdue*, and *Returned*.
+- **Institutional Analytics**: Departmental allocations, stock health, and circulation metrics.
+
+---
+
+## 👥 Demo Login Credentials (Ready to Test)
+
+The system is pre-seeded with ready-to-test accounts. You can use the **1-Click Demo Fillers** on the login page or enter:
+
+| Role | Portal | Identifier / Roll No | Password | Notes |
+|---|---|---|---|---|
+| **Head Librarian** | Librarian Portal | `LIB-PSG-01` | `admin123` | Full admin privileges |
+| **Student** | Student Portal | `23MX105` | `student123` | Aravind (MCA, 4 books limit) |
+| **Student** | Student Portal | `24CS101` | `student123` | Kavitha (CSE, 4 books limit) |
+| **Faculty** | Student Portal | `FAC-CSE-42` | `faculty123` | Dr. Radhakrishnan (CSE, 6 books limit) |
+
+*(New students and faculty can also register directly using the "Register an account" option).*
+
+---
 
 ### 1. 📖 Book Records & Catalog Management (Librarian CRUD)
 - **Add Book**: Record Title, Author, ISBN / Accession Number, Department, Shelf Location, Edition, Year, Publisher, Cover Accent Color, and Inventory Copies.
@@ -178,3 +213,4 @@ npm run dev
 
 ## 🏛️ About PSG Library
 Built to modern digital standards for **PSG College of Technology**, Coimbatore, providing students, faculty, and librarians with a streamlined, clutter-free book borrowing and inventory experience.
+

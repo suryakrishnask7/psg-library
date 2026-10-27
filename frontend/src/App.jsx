@@ -10,18 +10,34 @@ import BookDetailsModal from './components/BookDetailsModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import CirculationDesk from './components/CirculationDesk';
 import AnalyticsView from './components/AnalyticsView';
+import MyBookshelf from './components/MyBookshelf';
+import LoginPage from './components/LoginPage';
 import Toast from './components/Toast';
 import { bookAPI } from './services/api';
-import { BookOpen, RefreshCw, Plus, Cloud, Database, Globe } from 'lucide-react';
+import { BookOpen, RefreshCw, Cloud, Database, Globe } from 'lucide-react';
 
 export default function App() {
+  // Authentication state
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('psg_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   // Navigation & Tab state
-  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' | 'circulation' | 'analytics'
+  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' | 'bookshelf' | 'circulation' | 'analytics'
 
   // Books Data
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+
+  // Student active borrowings tracking
+  const [myBorrowedBookIds, setMyBorrowedBookIds] = useState(new Set());
+  const [myLoansCount, setMyLoansCount] = useState(0);
 
   // Filters & Search
   const [search, setSearch] = useState('');
@@ -64,6 +80,22 @@ export default function App() {
     return () => clearTimeout(handler);
   }, [search]);
 
+  // Load user's borrowed books if logged in as student or faculty
+  const loadMyLoans = useCallback(async () => {
+    if (!user || user.role === 'librarian') return;
+    try {
+      const res = await bookAPI.getMyLoans(user.identifier);
+      if (res.data.success) {
+        const activeLoans = res.data.data.active || [];
+        const ids = new Set(activeLoans.map((l) => (l.book?._id || l.book)));
+        setMyBorrowedBookIds(ids);
+        setMyLoansCount(activeLoans.length);
+      }
+    } catch (err) {
+      console.error('Failed to load my loans:', err);
+    }
+  }, [user]);
+
   // Load Library Statistics
   const loadStats = useCallback(async () => {
     try {
@@ -103,13 +135,41 @@ export default function App() {
     }
   }, [debouncedSearch, department, status, sortBy]);
 
-  // Initial load & when filters change
+  // Refresh books and stats when user or filters change
   useEffect(() => {
-    fetchBooks();
-    loadStats();
-  }, [fetchBooks, loadStats]);
+    if (user) {
+      fetchBooks();
+      loadStats();
+      loadMyLoans();
+    }
+  }, [user, fetchBooks, loadStats, loadMyLoans]);
 
-  // Add / Edit Book Submit
+  // Handle Logout
+  const handleLogout = () => {
+    localStorage.removeItem('psg_token');
+    localStorage.removeItem('psg_user');
+    setUser(null);
+    setActiveTab('catalog');
+    showToast('Logged out successfully', 'info');
+  };
+
+  // Student Self-Service Borrow / Issue
+  const handleSelfBorrow = async (book) => {
+    try {
+      const res = await bookAPI.selfIssueBook(book._id);
+      if (res.data.success) {
+        showToast(res.data.message || `"${book.title}" added to your bookshelf!`, 'success');
+        fetchBooks();
+        loadStats();
+        loadMyLoans();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Could not borrow book';
+      showToast(msg, 'error');
+    }
+  };
+
+  // Add / Edit Book Submit (Librarian)
   const handleSaveBook = async (formData) => {
     try {
       setIsSubmitting(true);
@@ -136,7 +196,7 @@ export default function App() {
     }
   };
 
-  // Delete Book Submit
+  // Delete Book Submit (Librarian)
   const handleDeleteBook = async (force = false) => {
     if (!deletingBook) return;
     try {
@@ -157,7 +217,7 @@ export default function App() {
     }
   };
 
-  // Issue Book Submit
+  // Manual Issue Book Submit (Librarian)
   const handleIssueBook = async (issueData) => {
     try {
       setIsSubmitting(true);
@@ -177,7 +237,7 @@ export default function App() {
     }
   };
 
-  // Quick Return directly from book card or table
+  // Quick Return directly from book card or table (Librarian)
   const handleQuickReturn = async (book) => {
     try {
       const res = await bookAPI.returnBookByBookId(book._id);
@@ -192,15 +252,16 @@ export default function App() {
     }
   };
 
-  // Seed / Reset Database Demo Action
+  // Seed / Reset Database Demo Action (Librarian)
   const handleSeedDatabase = async () => {
     try {
       setIsSeeding(true);
       const res = await bookAPI.seedDatabase();
       if (res.data.success) {
-        showToast('PSG Library reset & seeded with 20+ academic textbooks!', 'success');
+        showToast('PSG Library reset & seeded with catalog & demo users!', 'success');
         fetchBooks();
         loadStats();
+        loadMyLoans();
       }
     } catch (err) {
       showToast(err.response?.data?.message || 'Seeding failed', 'error');
@@ -209,10 +270,34 @@ export default function App() {
     }
   };
 
+  // If not logged in, show the sleek Login & Portal Switcher page
+  if (!user) {
+    return (
+      <>
+        <LoginPage
+          onLoginSuccess={(loggedUser) => {
+            setUser(loggedUser);
+            setActiveTab('catalog');
+          }}
+          onToast={showToast}
+        />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ message: '', type: 'info' })}
+        />
+      </>
+    );
+  }
+
+  const isLibrarian = user.role === 'librarian';
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-[#202124]">
       {/* Top App Bar */}
       <Navbar
+        user={user}
+        onLogout={handleLogout}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenAddModal={() => {
@@ -222,11 +307,12 @@ export default function App() {
         onSeedData={handleSeedDatabase}
         isSeeding={isSeeding}
         stats={stats}
+        myLoansCount={myLoansCount}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Tab 1: Catalog & Stock Management */}
+        {/* Tab 1: Catalog & Live Stock (Available to both Students & Librarians) */}
         {activeTab === 'catalog' && (
           <div>
             {/* Real-time KPI Stats Overview */}
@@ -264,29 +350,18 @@ export default function App() {
                 </div>
                 <h3 className="text-base font-bold text-gray-900 mb-1">No Books Found</h3>
                 <p className="text-xs text-gray-500 mb-4">
-                  No catalog items match your search or filter criteria. Try clearing filters or catalog a new book.
+                  No catalog items match your search or filter criteria. Try clearing filters.
                 </p>
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => {
-                      setSearch('');
-                      setDepartment('All');
-                      setStatus('All');
-                    }}
-                    className="px-4 py-2 rounded-full text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
-                    Reset Filters
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingBook(null);
-                      setIsBookModalOpen(true);
-                    }}
-                    className="px-4 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                  >
-                    Add Book
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setSearch('');
+                    setDepartment('All');
+                    setStatus('All');
+                  }}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  Reset Filters
+                </button>
               </div>
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -294,6 +369,8 @@ export default function App() {
                   <BookCard
                     key={book._id}
                     book={book}
+                    user={user}
+                    isBorrowedByMe={myBorrowedBookIds.has(book._id)}
                     onView={(b) => {
                       setSelectedBook(b);
                       setIsDetailsModalOpen(true);
@@ -310,6 +387,7 @@ export default function App() {
                       setIssuingBook(b);
                       setIsIssueModalOpen(true);
                     }}
+                    onSelfBorrow={handleSelfBorrow}
                     onQuickReturn={handleQuickReturn}
                   />
                 ))}
@@ -317,6 +395,8 @@ export default function App() {
             ) : (
               <BookTableView
                 books={books}
+                user={user}
+                myBorrowedBookIds={myBorrowedBookIds}
                 onView={(b) => {
                   setSelectedBook(b);
                   setIsDetailsModalOpen(true);
@@ -333,14 +413,29 @@ export default function App() {
                   setIssuingBook(b);
                   setIsIssueModalOpen(true);
                 }}
+                onSelfBorrow={handleSelfBorrow}
                 onQuickReturn={handleQuickReturn}
               />
             )}
           </div>
         )}
 
-        {/* Tab 2: Circulation & Lending Desk */}
-        {activeTab === 'circulation' && (
+        {/* Tab 2: Student & Faculty "My Bookshelf" */}
+        {activeTab === 'bookshelf' && !isLibrarian && (
+          <MyBookshelf
+            user={user}
+            onReturnComplete={() => {
+              fetchBooks();
+              loadStats();
+              loadMyLoans();
+            }}
+            onGoToCatalog={() => setActiveTab('catalog')}
+            onToast={showToast}
+          />
+        )}
+
+        {/* Tab 3: Librarian Circulation Desk */}
+        {activeTab === 'circulation' && isLibrarian && (
           <CirculationDesk
             onLoanReturned={() => {
               fetchBooks();
@@ -350,8 +445,8 @@ export default function App() {
           />
         )}
 
-        {/* Tab 3: Analytics & Visual Reports */}
-        {activeTab === 'analytics' && <AnalyticsView stats={stats} />}
+        {/* Tab 4: Librarian Analytics */}
+        {activeTab === 'analytics' && isLibrarian && <AnalyticsView stats={stats} />}
       </main>
 
       {/* Cloud Ready Deployment Footer Banner */}
@@ -361,39 +456,65 @@ export default function App() {
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-semibold text-gray-800">PSG Library System</span>
             <span>•</span>
-            <span>Designed for PSG College of Technology</span>
+            <span>{isLibrarian ? 'Librarian Administrative Mode' : `Logged in as ${user.name} (${user.identifier})`}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-700">
               <Cloud className="w-3.5 h-3.5 text-blue-500" />
-              Backend: Render Ready
+              Backend: Render
             </span>
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-700">
               <Globe className="w-3.5 h-3.5 text-black" />
-              Frontend: Vercel Ready
+              Frontend: Vercel
             </span>
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-700">
               <Database className="w-3.5 h-3.5 text-emerald-600" />
-              Database: MongoDB Atlas
+              MongoDB Atlas
             </span>
           </div>
         </div>
       </footer>
 
-      {/* Add / Edit Book Modal */}
-      <BookModal
-        isOpen={isBookModalOpen}
-        onClose={() => {
-          setIsBookModalOpen(false);
-          setEditingBook(null);
-        }}
-        onSubmit={handleSaveBook}
-        initialData={editingBook}
-        isSubmitting={isSubmitting}
-      />
+      {/* Modals for Librarians */}
+      {isLibrarian && (
+        <>
+          <BookModal
+            isOpen={isBookModalOpen}
+            onClose={() => {
+              setIsBookModalOpen(false);
+              setEditingBook(null);
+            }}
+            onSubmit={handleSaveBook}
+            initialData={editingBook}
+            isSubmitting={isSubmitting}
+          />
 
-      {/* View Book Details Modal */}
+          <IssueModal
+            isOpen={isIssueModalOpen}
+            onClose={() => {
+              setIsIssueModalOpen(false);
+              setIssuingBook(null);
+            }}
+            book={issuingBook}
+            onConfirmIssue={handleIssueBook}
+            isSubmitting={isSubmitting}
+          />
+
+          <DeleteConfirmModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => {
+              setIsDeleteModalOpen(false);
+              setDeletingBook(null);
+            }}
+            onConfirm={handleDeleteBook}
+            book={deletingBook}
+            isDeleting={isDeleting}
+          />
+        </>
+      )}
+
+      {/* View Book Details Modal (Available to both) */}
       <BookDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => {
@@ -410,38 +531,19 @@ export default function App() {
           setIsDeleteModalOpen(true);
         }}
         onIssue={(b) => {
-          setIssuingBook(b);
-          setIsIssueModalOpen(true);
+          if (isLibrarian) {
+            setIssuingBook(b);
+            setIsIssueModalOpen(true);
+          } else {
+            handleSelfBorrow(b);
+          }
         }}
         onReturnComplete={() => {
           fetchBooks();
           loadStats();
+          loadMyLoans();
           showToast('Book copy successfully checked back into stock!', 'success');
         }}
-      />
-
-      {/* Issue / Checkout Modal */}
-      <IssueModal
-        isOpen={isIssueModalOpen}
-        onClose={() => {
-          setIsIssueModalOpen(false);
-          setIssuingBook(null);
-        }}
-        book={issuingBook}
-        onConfirmIssue={handleIssueBook}
-        isSubmitting={isSubmitting}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setDeletingBook(null);
-        }}
-        onConfirm={handleDeleteBook}
-        book={deletingBook}
-        isDeleting={isDeleting}
       />
 
       {/* Toast Notification */}

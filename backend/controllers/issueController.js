@@ -1,7 +1,7 @@
 const IssueRecord = require('../models/IssueRecord');
 const Book = require('../models/Book');
 
-// Get all issue records
+// Get all issue records (Librarian view)
 exports.getIssues = async (req, res) => {
   try {
     const { status, rollNumber, search, page = 1, limit = 25 } = req.query;
@@ -42,7 +42,7 @@ exports.getIssues = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
-      .populate('book', 'title author department coverColor shelfLocation');
+      .populate('book', 'title author department coverColor shelfLocation totalCopies availableCopies');
 
     res.json({
       success: true,
@@ -60,7 +60,179 @@ exports.getIssues = async (req, res) => {
   }
 };
 
-// Issue a book to a student
+// Get loans belonging to the currently logged in Student or Faculty member
+exports.getMyLoans = async (req, res) => {
+  try {
+    const identifier = req.user ? req.user.identifier : req.query.rollNumber;
+    if (!identifier) {
+      return res.status(400).json({ success: false, message: 'Member identifier is required' });
+    }
+
+    // Refresh overdue status
+    const now = new Date();
+    await IssueRecord.updateMany(
+      { status: 'Issued', dueDate: { $lt: now } },
+      { $set: { status: 'Overdue' } }
+    );
+
+    const loans = await IssueRecord.find({
+      rollNumber: identifier.toUpperCase(),
+    })
+      .sort({ createdAt: -1 })
+      .populate('book', 'title author department coverColor shelfLocation isbn');
+
+    const activeLoans = loans.filter((l) => ['Issued', 'Overdue'].includes(l.status));
+    const pastLoans = loans.filter((l) => l.status === 'Returned');
+
+    res.json({
+      success: true,
+      data: {
+        all: loans,
+        active: activeLoans,
+        history: pastLoans,
+        activeCount: activeLoans.length,
+      },
+    });
+  } catch (error) {
+    console.error('getMyLoans error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Self-issue a book (Student / Faculty self-service checkout)
+exports.selfIssueBook = async (req, res) => {
+  try {
+    const user = req.user;
+    const { bookId } = req.body;
+
+    if (!bookId) {
+      return res.status(400).json({ success: false, message: 'Book ID is required' });
+    }
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+
+    if (book.availableCopies <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: `"${book.title}" is currently out of stock. All ${book.totalCopies} copies are issued.`,
+      });
+    }
+
+    // Check quota / max allowed books for this student/faculty
+    const currentActiveLoans = await IssueRecord.countDocuments({
+      rollNumber: user.identifier,
+      status: { $in: ['Issued', 'Overdue'] },
+    });
+
+    const maxAllowed = user.maxBooksAllowed || 4;
+    if (currentActiveLoans >= maxAllowed) {
+      return res.status(400).json({
+        success: false,
+        message: `You have reached your borrowing limit of ${maxAllowed} books. Please return a book before issuing a new one.`,
+      });
+    }
+
+    // Check if user already holds a copy of this exact book
+    const existingLoan = await IssueRecord.findOne({
+      book: book._id,
+      rollNumber: user.identifier,
+      status: { $in: ['Issued', 'Overdue'] },
+    });
+
+    if (existingLoan) {
+      return res.status(400).json({
+        success: false,
+        message: `You already have an active loan for "${book.title}". Each student can only check out one copy per title.`,
+      });
+    }
+
+    // Decrement available copies
+    book.availableCopies -= 1;
+    await book.save();
+
+    // Standard borrowing duration: 14 days for students, 30 days for faculty
+    const loanDurationDays = user.role === 'faculty' ? 30 : 14;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + loanDurationDays);
+
+    const issueRecord = new IssueRecord({
+      book: book._id,
+      bookTitle: book.title,
+      bookIsbn: book.isbn,
+      studentName: user.name,
+      rollNumber: user.identifier,
+      department: user.department,
+      contactEmail: user.email,
+      contactPhone: user.phone || '',
+      issueDate: new Date(),
+      dueDate,
+      status: 'Issued',
+      remarks: 'Self-checkout via PSG Digital Portal',
+    });
+
+    await issueRecord.save();
+
+    res.status(201).json({
+      success: true,
+      message: `"${book.title}" checked out successfully! Return due on ${dueDate.toLocaleDateString()}.`,
+      data: issueRecord,
+      bookAvailableCopies: book.availableCopies,
+    });
+  } catch (error) {
+    console.error('selfIssueBook error:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// Self-service return of a book by student/faculty
+exports.selfReturnBook = async (req, res) => {
+  try {
+    const user = req.user;
+    const issueId = req.params.id;
+
+    const issue = await IssueRecord.findById(issueId);
+    if (!issue) {
+      return res.status(404).json({ success: false, message: 'Loan record not found' });
+    }
+
+    // Only allow if this loan belongs to this member, or if user is librarian
+    if (user.role !== 'librarian' && issue.rollNumber !== user.identifier) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only return books checked out under your own ID',
+      });
+    }
+
+    if (issue.status === 'Returned') {
+      return res.status(400).json({ success: false, message: 'This book has already been returned' });
+    }
+
+    // Restore book stock
+    const book = await Book.findById(issue.book);
+    if (book) {
+      book.availableCopies = Math.min(book.totalCopies, book.availableCopies + 1);
+      await book.save();
+    }
+
+    issue.status = 'Returned';
+    issue.returnDate = new Date();
+    await issue.save();
+
+    res.json({
+      success: true,
+      message: `"${issue.bookTitle}" returned successfully! Thank you.`,
+      data: issue,
+    });
+  } catch (error) {
+    console.error('selfReturnBook error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Issue a book to a student (Librarian manual issue)
 exports.createIssue = async (req, res) => {
   try {
     const {
@@ -96,17 +268,19 @@ exports.createIssue = async (req, res) => {
       });
     }
 
+    const cleanRoll = rollNumber.trim().toUpperCase();
+
     // Check if student already holds an unreturned copy of this exact book
     const existingLoan = await IssueRecord.findOne({
       book: book._id,
-      rollNumber: rollNumber.trim().toUpperCase(),
+      rollNumber: cleanRoll,
       status: { $in: ['Issued', 'Overdue'] },
     });
 
     if (existingLoan) {
       return res.status(400).json({
         success: false,
-        message: `Student (${rollNumber.toUpperCase()}) already has an active issue of this book.`,
+        message: `Student (${cleanRoll}) already has an active issue of this book.`,
       });
     }
 
@@ -114,7 +288,6 @@ exports.createIssue = async (req, res) => {
     book.availableCopies -= 1;
     await book.save();
 
-    // Default due date: 14 days from now if not given
     const calculatedDueDate = dueDate
       ? new Date(dueDate)
       : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
@@ -124,7 +297,7 @@ exports.createIssue = async (req, res) => {
       bookTitle: book.title,
       bookIsbn: book.isbn,
       studentName: studentName.trim(),
-      rollNumber: rollNumber.trim().toUpperCase(),
+      rollNumber: cleanRoll,
       department: department.trim(),
       contactEmail: contactEmail || '',
       contactPhone: contactPhone || '',
@@ -138,7 +311,7 @@ exports.createIssue = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: `Book "${book.title}" successfully issued to ${studentName} (${rollNumber.toUpperCase()})`,
+      message: `Book "${book.title}" successfully issued to ${studentName} (${cleanRoll})`,
       data: issueRecord,
       bookAvailableCopies: book.availableCopies,
     });
@@ -148,7 +321,7 @@ exports.createIssue = async (req, res) => {
   }
 };
 
-// Return an issued book
+// Return an issued book (Librarian manual return)
 exports.returnIssue = async (req, res) => {
   try {
     const issue = await IssueRecord.findById(req.params.id);
@@ -160,7 +333,6 @@ exports.returnIssue = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Book has already been returned' });
     }
 
-    // Increment available copies on the book
     const book = await Book.findById(issue.book);
     if (book) {
       book.availableCopies = Math.min(book.totalCopies, book.availableCopies + 1);
@@ -186,7 +358,7 @@ exports.returnIssue = async (req, res) => {
   }
 };
 
-// Direct return from book ID (returns the oldest active issue for this book or for a given roll number)
+// Direct return from book ID
 exports.returnBookByBookId = async (req, res) => {
   try {
     const { rollNumber } = req.body;

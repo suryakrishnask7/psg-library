@@ -8,13 +8,21 @@ const connectDB = require('./config/db');
 // Import routes
 const bookRoutes = require('./routes/bookRoutes');
 const issueRoutes = require('./routes/issueRoutes');
+const authRoutes = require('./routes/authRoutes');
 const seedDB = require('./seed');
+const { seedDefaultUsers } = require('./controllers/authController');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB Database
-connectDB();
+// Connect to MongoDB Database and initialize defaults
+connectDB().then(async () => {
+  try {
+    await seedDefaultUsers();
+  } catch (err) {
+    console.error('Default users initialization error:', err.message);
+  }
+});
 
 // Middleware
 app.use(cors({
@@ -31,7 +39,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'PSG Library Management System API is live and operational 📚',
     version: '1.0.0',
-    documentation: '/api/books, /api/issues, /api/books/stats',
+    documentation: '/api/books, /api/issues, /api/auth, /api/books/stats',
     databaseStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting/Disconnected',
   });
 });
@@ -49,13 +57,15 @@ app.get('/api/health', (req, res) => {
 app.post('/api/seed', async (req, res) => {
   try {
     await seedDB();
-    res.json({ success: true, message: 'Database successfully seeded with PSG Library catalogue!' });
+    await seedDefaultUsers();
+    res.json({ success: true, message: 'Database successfully seeded with PSG Library catalogue & demo users!' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Seeding failed', error: err.message });
   }
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/issues', issueRoutes);
 

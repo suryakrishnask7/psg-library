@@ -118,3 +118,4 @@ bookSchema.index({
 });
 
 module.exports = mongoose.model('Book', bookSchema);
+

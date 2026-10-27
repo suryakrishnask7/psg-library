@@ -11,16 +11,21 @@ import {
   CheckCircle2,
   AlertCircle,
   XCircle,
+  BookmarkCheck,
 } from 'lucide-react';
 
 export default function BookCard({
   book,
+  user,
+  isBorrowedByMe = false,
   onView,
   onEdit,
   onDelete,
   onIssue,
+  onSelfBorrow,
   onQuickReturn,
 }) {
+  const isLibrarian = user?.role === 'librarian';
   const isOutOfStock = book.availableCopies <= 0;
   const isLowStock = book.availableCopies > 0 && book.availableCopies <= 2;
   const borrowedCount = book.totalCopies - book.availableCopies;
@@ -61,7 +66,7 @@ export default function BookCard({
         {/* Header: Department & Status Badge */}
         <div>
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-[11px] font-semibold tracking-wide text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 truncate max-w-[170px]">
+            <span className="text-[11px] font-semibold tracking-wide text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 truncate max-w-[160px]">
               {book.department}
             </span>
 
@@ -103,13 +108,13 @@ export default function BookCard({
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="text-gray-500 flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-gray-400" />
-              Availability
+              Live Availability
             </span>
             <span className="font-semibold text-gray-800">
               <span className={book.availableCopies > 0 ? 'text-blue-600' : 'text-rose-600'}>
                 {book.availableCopies}
               </span>
-              <span className="text-gray-400"> / {book.totalCopies} copies</span>
+              <span className="text-gray-400"> / {book.totalCopies} in shelf</span>
             </span>
           </div>
 
@@ -123,56 +128,81 @@ export default function BookCard({
             />
           </div>
 
-          {/* Card Action Buttons */}
-          <div className="flex items-center justify-between gap-1.5 pt-1">
-            {/* Quick Issue CTA */}
-            <button
-              onClick={() => onIssue(book)}
-              disabled={isOutOfStock}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-colors disabled:opacity-40 disabled:hover:bg-blue-50 disabled:hover:text-blue-700 cursor-pointer disabled:cursor-not-allowed"
-            >
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>Issue</span>
-            </button>
-
-            {/* Quick Return CTA (if borrowed copies exist) */}
-            {borrowedCount > 0 && (
+          {/* Card Action Buttons based on User Role */}
+          {isLibrarian ? (
+            /* Librarian Actions */
+            <div className="flex items-center justify-between gap-1.5 pt-1">
               <button
-                onClick={() => onQuickReturn(book)}
-                title="Quick return an issued copy"
-                className="flex items-center justify-center py-1.5 px-2.5 rounded-xl text-xs font-medium bg-gray-100 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 hover:border-emerald-200 border border-transparent transition-colors"
+                onClick={() => onIssue(book)}
+                disabled={isOutOfStock}
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-colors disabled:opacity-40 disabled:hover:bg-blue-50 disabled:hover:text-blue-700 cursor-pointer disabled:cursor-not-allowed"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <ArrowUpRight className="w-3.5 h-3.5" />
+                <span>Issue</span>
               </button>
-            )}
 
-            {/* View Details */}
-            <button
-              onClick={() => onView(book)}
-              title="View book details & loan history"
-              className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
+              {borrowedCount > 0 && (
+                <button
+                  onClick={() => onQuickReturn(book)}
+                  title="Quick return an issued copy"
+                  className="flex items-center justify-center py-1.5 px-2.5 rounded-xl text-xs font-medium bg-gray-100 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 hover:border-emerald-200 border border-transparent transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
 
-            {/* Edit */}
-            <button
-              onClick={() => onEdit(book)}
-              title="Edit book record"
-              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
+              <button
+                onClick={() => onView(book)}
+                title="View book details & loan history"
+                className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4" />
+              </button>
 
-            {/* Delete */}
-            <button
-              onClick={() => onDelete(book)}
-              title="Delete book record"
-              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
+              <button
+                onClick={() => onEdit(book)}
+                title="Edit book record"
+                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => onDelete(book)}
+                title="Delete book record"
+                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            /* Student & Faculty Self-Service Actions */
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {isBorrowedByMe ? (
+                <div className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <BookmarkCheck className="w-3.5 h-3.5" />
+                  <span>In Your Bookshelf</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => onSelfBorrow(book)}
+                  disabled={isOutOfStock}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs hover:shadow transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span>{isOutOfStock ? 'Out of Stock' : 'Borrow Book (Self-Issue)'}</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => onView(book)}
+                title="View syllabus & book details"
+                className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
