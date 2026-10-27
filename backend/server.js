@@ -11,6 +11,7 @@ const issueRoutes = require('./routes/issueRoutes');
 const authRoutes = require('./routes/authRoutes');
 const seedDB = require('./seed');
 const { seedDefaultUsers } = require('./controllers/authController');
+const startKeepAliveCron = require('./utils/keepAlive');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -93,4 +94,7 @@ app.listen(PORT, () => {
   console.log(`📡 Running on http://localhost:${PORT}`);
   console.log(`🌐 Ready for Render Deployment on port: ${PORT}`);
   console.log(`=========================================`);
+
+  // Start Render keep-alive background worker
+  startKeepAliveCron();
 });

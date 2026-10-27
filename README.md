@@ -155,24 +155,26 @@ npm run dev
 
 ### Part 2: Backend on Render
 1. Push your repository to GitHub.
-2. Sign in to [Render](https://dashboard.render.com).
+2. Sign in to [Render Dashboard](https://dashboard.render.com).
 3. Click **New +** → **Web Service** and connect your GitHub repository.
-4. Configure service settings:
+4. Fill in the exact settings:
    - **Name**: `psg-library-api`
    - **Root Directory**: `backend`
    - **Runtime**: `Node`
    - **Build Command**: `npm install`
-   - **Start Command**: `node server.js`
-   - **Plan**: Free
+   - **Start / Run Command**: `node server.js`
+   - **Plan**: `Free`
 5. In **Environment Variables**, add:
    - `NODE_ENV`: `production`
    - `PORT`: `5000`
    - `MONGODB_URI`: `<Your MongoDB Atlas Connection String from Part 1>`
+   *(Optional: Render automatically provides `RENDER_EXTERNAL_URL`, which activates the 24/7 Keep-Alive Cron)*
 6. Click **Deploy Web Service**.
 7. Once deployed, note down your Render backend URL:
    `https://psg-library-api.onrender.com`
 
-> **Note**: You can trigger the initial database seed at any time by sending a POST request to `https://psg-library-api.onrender.com/api/seed` or clicking **Seed Data** in the frontend top bar!
+> **⏰ Automated 24/7 Keep-Alive Cron**:
+> Render's free tier spins down web services after 15 minutes of inactivity. We built an automated keep-alive worker in `backend/utils/keepAlive.js` that automatically detects your Render URL and self-pings `/api/health` every 14 minutes, keeping your service **awake 24/7 with zero spin-down delay**.
 
 ---
 

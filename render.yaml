@@ -6,6 +6,7 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     plan: free
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -13,4 +14,3 @@ services:
         value: 5000
       - key: MONGODB_URI
         sync: false
-
